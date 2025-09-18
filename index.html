@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>カテゴリ別ランダム表示</title>
+<style>
+body {
+  font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+  margin: 0;
+  background: #f0f8f5;
+  color: #333;
+}
+main {
+  max-width: 1000px;
+  margin: 30px auto;
+  padding: 0 20px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+  background: white;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+th, td {
+  border: 1px solid #cce3cc;
+  padding: 10px;
+  vertical-align: middle;
+}
+
+td.id-cell, td.number-cell, td.person-cell {
+  white-space: nowrap;
+  padding: 5px;
+  text-align: center;
+}
+
+td.category-name {
+  text-align: left;
+  word-break: break-word;
+  white-space: normal;
+  padding: 10px;
+}
+
+td.reason-cell {
+  width: 45%;
+  text-align: left;
+  word-break: break-word;
+  white-space: normal;
+  cursor:pointer;
+  background:#fafffa;
+  padding: 10px;
+}
+
+th {
+  background: #e6f4ea;
+  color: #2f5d2f;
+}
+tr:nth-child(even) { background: #f7fbf7; }
+
+ul.word-list { list-style:none; padding-left:0; margin-top:5px; border:1px solid #cce3cc; border-radius:4px; padding:5px; background:#f0f8f5; }
+ul.word-list li { display:flex; justify-content:space-between; align-items:center; margin:2px 0; padding:2px 4px; border-radius:4px; font-size:14px; }
+ul.word-list li button { background:#e57373; color:white; border:none; border-radius:4px; cursor:pointer; padding:2px 6px; font-size:12px; margin-left:4px; }
+ul.word-list li button:hover { background:#c62828; }
+button.close-list { background:#999; color:white; border:none; border-radius:50%; cursor:pointer; width:18px; height:18px; line-height:16px; font-size:12px; font-weight:bold; float:right; margin-bottom:2px; }
+button.close-list:hover { background:#666; }
+input.inline-input, select.inline-select { width:95%; padding:4px; font-size:14px; border:1px solid #6abf69; border-radius:4px; }
+.add-word-input { width:90%; margin-top:4px; padding:2px 4px; font-size:13px; border-radius:4px; border:1px solid #6abf69; }
+</style>
+</head>
+<body>
+<main>
+<table>
+  <thead>
+    <tr>
+      <th colspan="2">部門</th>
+      <th colspan="2">投票先</th>
+      <th>理由</th>
+    </tr>
+  </thead>
+  <tbody id="randomResults"></tbody>
+</table>
+</main>
+
+<script>
+// カテゴリ一覧
+const fixedCategories = [
+ { id: 1, name: "恋人にしたい" },
+  { id: 2, name: "友だちにしたい" },
+  { id: 3, name: "弟にしたい" },
+  { id: 4, name: "お兄さんにしたい" },
+  { id: 5, name: "先輩になってほしい" },
+  { id: 6, name: "後輩になってほしい" },
+  { id: 7, name: "学校の先生になってほしい" },
+  { id: 8, name: "キスしてみたい" },
+  { id: 9, name: "ペットにしたい" },
+  { id: 10, name: "いちばんおしゃれ" },
+  { id: 11, name: "私服がダサそう" },
+  { id: 12, name: "いちばんセクシー" },
+  { id: 13, name: "いちばんおもしろい" },
+  { id: 14, name: "いちばん美形" },
+  { id: 15, name: "いちばん美声" },
+  { id: 16, name: "ダンスがかっこいい" },
+  { id: 17, name: "グローバルに活躍しそう" },
+  { id: 18, name: "演技がうまい" },
+  { id: 19, name: "絵がヘタそう" },
+  { id: 20, name: "恋人に尽くしそう" },
+  { id: 21, name: "バズるポーズを生み出しそう" },
+  { id: 22, name: "女装が似合いそう" },
+  { id: 23, name: "秒でメーカーの返信がきそう" },
+  { id: 24, name: "天然キャラっぽい" },
+  { id: 25, name: "未読が1000件以上たまってそう" },
+  { id: 26, name: "泣き虫そう" },
+  { id: 27, name: "ハヤリのダンスをすぐものにしそう" },
+  { id: 28, name: "ナルシストっぽい" },
+  { id: 29, name: "ニュースキャスターになりそう" },
+  { id: 30, name: "いちばんいいコンビ" },
+  { id: 31, name: "私のリア恋枠" },
+  { id: 32, name: "いちばんMCがうまい" },
+  { id: 33, name: "意外とメガネが似合いそう" },
+  { id: 34, name: "御曹司っぽい" },
+  { id: 35, name: "手料理が食べたい" },
+  { id: 36, name: "いい匂いがしそう" },
+  { id: 37, name: "いちばんもちもち" },
+  { id: 38, name: "犬っぽい" },
+  { id: 39, name: "猫っぽい" },
+  { id: 40, name: "昭和歌謡を歌ってほしい" },
+  { id: 41, name: "お湯が沸いたとき" },
+  { id: 42, name: "クレーンゲームが上手そう" },
+  { id: 43, name: "お肉の焼き方にこだわりがありそう" },
+  { id: 44, name: "少女マンガで主人公に片思い" },
+  { id: 45, name: "いちばんステージジェニック" },
+  { id: 46, name: "インスタのストーリーズ" },
+  { name: "高校生以下部門" }, // id 空欄
+  { id: 47, name: "となりの席に座りたい" },
+  { id: 48, name: "いっしょに補習を受けたい" },
+  { id: 49, name: "テスト前" },
+  { id: 50, name: "修学旅行でいっしょの班になりたい" },
+  { id: 51, name: "文化祭でテンション上がって公開告白" },
+  { id: 52, name: "制服を個性的に着こなしそう" },
+  { id: 53, name: "お弁当が大きそう" }
+];
+
+// 投票先数字と名前の対応
+const numberToName = {
+  0:"名前",
+  58:"今野大輝",
+  62:"佐々木大光",
+  71:"菅田琳寧",
+  107:"中村嶺亜",
+  146:"本髙克樹",
+  148:"矢花黎"
+};
+
+// データ保存
+function getData(){ return JSON.parse(localStorage.getItem("categories"))||{}; }
+function saveData(data){ localStorage.setItem("categories",JSON.stringify(data)); }
+
+// テーブル描画
+function renderTable(){
+  const data = getData();
+  const tbody = document.getElementById("randomResults");
+  tbody.innerHTML="";
+
+  fixedCategories.forEach(cat=>{
+    const words = data[cat.name]?.words||[];
+    const number = data[cat.name]?.number||"";
+    const person = numberToName[number]||"";
+    const randomWord = words.length>0 ? words[Math.floor(Math.random()*words.length)] : "";
+
+    const row = document.createElement("tr");
+    row.innerHTML=`
+      <td class="id-cell">${cat.id ?? ""}</td>
+      <td class="category-name">${cat.name}</td>
+      <td class="number-cell" data-cat="${cat.name}">${number}</td>
+      <td class="person-cell">${person}</td>
+      <td class="reason-cell" data-cat="${cat.name}">${randomWord}</td>
+    `;
+    tbody.appendChild(row);
+  });
+
+  // 投票先プルダウン
+  document.querySelectorAll("td.number-cell").forEach(td=>{
+    td.onclick = (e)=>{
+      e.stopPropagation();
+      const cat = td.dataset.cat;
+      if(td.querySelector("select")) return;
+
+      const currentValue = td.textContent.trim();
+      const select = document.createElement("select");
+      select.className="inline-select";
+
+      [0,58,62,71,107,146,148].forEach(n=>{
+        const opt = document.createElement("option");
+        opt.value = n; opt.textContent = n;
+        if(currentValue == n) opt.selected = true;
+        select.appendChild(opt);
+      });
+
+      td.innerHTML=""; td.appendChild(select);
+      setTimeout(()=>select.focus(),0);
+
+      select.addEventListener("change", ()=>{
+        updateNumber(cat, select.value);
+        renderTable();
+      });
+      select.addEventListener("mousedown", e=>e.stopPropagation());
+    };
+  });
+
+  // 理由セルクリックで編集・追加
+  document.querySelectorAll("td.reason-cell").forEach(td=>{
+    td.onclick=()=>showWordList(td, td.dataset.cat);
+  });
+}
+
+// 数字更新
+function updateNumber(cat,num){ 
+  let data=getData(); 
+  if(!data[cat]) data[cat]={number:null,words:[]};
+  data[cat].number=parseInt(num);
+  saveData(data);
+}
+
+// 理由更新
+function updateWord(cat,word,index){ 
+  let data=getData();
+  if(!data[cat]) data[cat]={number:null,words:[]};
+  if(index!==undefined) data[cat].words[index]=word;
+  else data[cat].words.push(word);
+  saveData(data);
+}
+
+// 理由リスト表示
+function showWordList(td,cat){
+  if(td.querySelector(".word-list")) return;
+  const data=getData();
+  const words = data[cat]?.words||[];
+
+  const ul = document.createElement("ul"); ul.className="word-list";
+  const closeBtn = document.createElement("button"); closeBtn.className="close-list"; closeBtn.textContent="×";
+  closeBtn.onclick=(e)=>{ e.stopPropagation(); ul.remove(); closeBtn.remove(); }
+  td.appendChild(closeBtn);
+
+  words.forEach((w,i)=>{
+    const li = document.createElement("li");
+    const span = document.createElement("span"); span.textContent=w; span.style.cursor="pointer";
+    span.onclick=()=>{
+      const input = document.createElement("input"); input.type="text"; input.className="inline-input"; input.value=w;
+      li.innerHTML=""; li.appendChild(input); input.focus();
+      input.onblur=()=>{ const val=input.value.trim(); if(val) updateWord(cat,val,i); else { data[cat].words.splice(i,1); saveData(data); } renderTable(); };
+      input.onkeydown=e=>{ if(e.key==="Enter") input.blur(); };
+    };
+    const delBtn = document.createElement("button"); delBtn.textContent="削除";
+    delBtn.onclick=()=>{ data[cat].words.splice(i,1); saveData(data); renderTable(); };
+    li.appendChild(span); li.appendChild(delBtn); ul.appendChild(li);
+  });
+
+  const inputNew = document.createElement("input"); inputNew.type="text"; inputNew.placeholder="新しい理由を追加"; inputNew.className="add-word-input";
+  inputNew.onkeydown = e=>{ if(e.key==="Enter"){ e.stopPropagation(); const val=inputNew.value.trim(); if(val){ updateWord(cat,val); inputNew.value=""; renderTable(); showWordList(td,cat); } } }
+  ul.appendChild(inputNew);
+
+  td.appendChild(ul);
+}
+
+window.onload = renderTable;
+</script>
+</body>
+</html>
